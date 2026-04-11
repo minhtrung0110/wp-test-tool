@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6; /* Example configuration */
+}
+
+/* Add any custom CSS below */
+body {
+  margin: 0;
+  display: flex;
+  min-height: 100vh;
+}
