@@ -1,87 +1,388 @@
-import { useState, useEffect } from 'react'
-import { Rocket, MonitorPlay } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { MonitorPlay, Sun, Moon, Monitor, Download, Upload, FileText } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
-import { useAppStore } from './store'
+import { useAppStore, type Page } from './store'
+import { ThemeSelectionModal, type Theme } from './components/ThemeSelectionModal'
+import { Sidebar } from './components/Sidebar'
+import { WebviewToolbar } from './components/WebviewToolbar'
+import { BottomPanel } from './components/BottomPanel'
+import { AddPageModal } from './components/AddPageModal'
+import { ManageCategoriesModal } from './components/ManageCategoriesModal'
 
-export function App() {
-  const { url, setUrl } = useAppStore()
-  const [storeValue, setStoreValue] = useState<string>('')
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function applyTheme(theme: string) {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  if (theme === 'dark' || (theme === 'system' && prefersDark)) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
+// ── App Header ───────────────────────────────────────────────────────
+
+function getPageUrl(domain: string, slug: string): string {
+  const d = domain.replace(/\/$/, '')
+  const s = slug.startsWith('/') ? slug : `/${slug}`
+  return d ? `${d}${s}` : slug
+}
+
+function Header() {
+  const { domain, setDomain, theme, setTheme, pages, testState, notes, categories, activePageId } =
+    useAppStore()
+  const [domainInput, setDomainInput] = useState(domain)
 
   useEffect(() => {
-    // Example of calling IPC via context bridge
-    const fetchStore = async () => {
-      try {
-        const val = await window.api.getStoreValue('lastUrl')
-        if (val) {
-          setUrl(val)
-          setStoreValue(val)
-        }
-      } catch (error) {
-        console.error('Failed to get store value', error)
-      }
-    }
-    fetchStore()
-  }, [setUrl])
+    setDomainInput(domain)
+  }, [domain])
 
-  const handleSave = async () => {
-    try {
-      await window.api.setStoreValue('lastUrl', url)
-      toast.success('Đã lưu URL làm mặc định!')
-    } catch (error) {
-      toast.error('Lỗi khi lưu cài đặt.')
+  const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system']
+  const ThemeIcon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor
+
+  async function handleSaveDomain() {
+    const trimmed = domainInput.trim().replace(/\/$/, '')
+    setDomain(trimmed)
+    await window.api.setStoreValue('domain', trimmed)
+    toast.success('Domain updated')
+    // Reload webview if a page is currently active
+    if (activePageId) {
+      const activePage = pages.find((p) => p.id === activePageId)
+      if (activePage) {
+        window.api.webviewNavigate(getPageUrl(trimmed, activePage.slug))
+      }
     }
   }
 
+  async function handleThemeCycle() {
+    const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % 3]
+    setTheme(next)
+    applyTheme(next)
+    await window.api.setStoreValue('theme', next)
+    window.api.setNativeTheme(next)
+  }
+
+  async function handleExportJson() {
+    const data = {
+      domain,
+      categories,
+      pages: pages.map(({ id, title, slug, category }) => ({ id, title, slug, category })),
+    }
+    const ok = await window.api.exportJson(data)
+    if (ok) toast.success('Exported pages.json')
+  }
+
+  async function handleImportJson() {
+    const data = await window.api.importJson()
+    if (!data || typeof data !== 'object') return
+    const d = data as {
+      domain?: string
+      categories?: string[]
+      pages?: Page[]
+    }
+    if (d.domain) {
+      useAppStore.getState().setDomain(d.domain)
+      await window.api.setStoreValue('domain', d.domain)
+    }
+    if (Array.isArray(d.categories) && d.categories.length) {
+      useAppStore.getState().setCategories(d.categories)
+      await window.api.setStoreValue('categories', d.categories)
+    }
+    if (Array.isArray(d.pages)) {
+      useAppStore.getState().setPages(d.pages)
+      await window.api.setStoreValue('pages', d.pages)
+    }
+    toast.success('Data imported!')
+  }
+
+  async function handleExportReport() {
+    const now = new Date().toLocaleString('en-US')
+    const lines: string[] = [
+      `WP Test Tool — Test Report`,
+      `Domain: ${domain}`,
+      `Date: ${now}`,
+      `Total pages: ${pages.length}`,
+      '',
+      '─'.repeat(60),
+      '',
+    ]
+    for (const page of pages) {
+      const status = testState[page.id] ?? 'untested'
+      const note = notes[page.id]?.trim() ?? ''
+      const statusLabel = status === 'tested' ? 'OK' : status === 'error' ? 'ERROR' : 'Untested'
+      lines.push(`[${statusLabel}] ${page.title}`)
+      lines.push(`      ${page.slug}`)
+      if (note) lines.push(`      Note: ${note}`)
+      lines.push('')
+    }
+    const ok = await window.api.exportReport(lines.join('\n'))
+    if (ok) toast.success('Report exported!')
+  }
+
   return (
-    <div className="flex h-full w-full bg-slate-950 text-slate-200 font-sans">
-      <Toaster theme="dark" position="bottom-right" />
-      
-      {/* Sidebar - 300px width as configured in Main Process indexing */}
-      <aside className="w-[300px] border-r border-slate-800 bg-slate-900 flex flex-col p-6 shadow-2xl z-10 shrink-0">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-2 bg-primary/20 rounded-xl">
-            <MonitorPlay className="w-8 h-8 text-blue-400" />
+    <header className="h-[52px] bg-surface-container-low border-b border-outline-variant/10 flex items-center gap-3 px-4 shrink-0">
+      {/* Logo */}
+      <div className="flex items-center gap-2 shrink-0 w-[232px]">
+        <img src="/icon.png" alt="WP Test Tool" className="w-6 h-6 rounded object-contain shrink-0" draggable={false} />
+        <span className="text-[14px] font-bold font-display text-on-surface">WP Test Tool</span>
+      </div>
+
+      {/* Domain input */}
+      <div className="flex-1 flex items-center gap-2">
+        <input
+          type="text"
+          value={domainInput}
+          onChange={(e) => setDomainInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSaveDomain()}
+          placeholder="http://yoursite.local"
+          className="flex-1 bg-surface-container rounded-md px-3 py-1.5 text-[13px] font-mono text-on-surface
+            border border-outline-variant/20 focus:outline-none focus:border-primary
+            placeholder:text-on-surface-variant/30 transition-colors h-[30px]"
+        />
+        <button
+          onClick={handleSaveDomain}
+          className="px-3 h-[30px] text-[13px] font-medium text-white bg-primary rounded-md
+            hover:bg-primary-container transition-colors whitespace-nowrap active:scale-[0.98]"
+        >
+          Save
+        </button>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={handleImportJson}
+          title="Import JSON"
+          className="p-1.5 rounded-md hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+        >
+          <Upload className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleExportJson}
+          title="Export JSON"
+          className="p-1.5 rounded-md hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+        >
+          <Download className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleExportReport}
+          title="Export report (.txt)"
+          className="p-1.5 rounded-md hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+        >
+          <FileText className="w-4 h-4" />
+        </button>
+
+        <div className="w-px h-5 bg-outline-variant/20 mx-1" />
+
+        <button
+          onClick={handleThemeCycle}
+          title={`Theme: ${theme}`}
+          className="p-1.5 rounded-md hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+        >
+          <ThemeIcon className="w-4 h-4" />
+        </button>
+      </div>
+    </header>
+  )
+}
+
+// ── App Root ─────────────────────────────────────────────────────────
+
+export function App() {
+  const {
+    setDomain,
+    setPages,
+    setCategories,
+    setTestStatus,
+    setNote,
+    setHttpStatus,
+    setTheme,
+    setWebviewLoading,
+    setWebviewTitle,
+    setCanGoBack,
+    setCanGoForward,
+    setCurrentUrl,
+    activePageId,
+    testState,
+    setTestStatus: markTested,
+    openAddModal,
+  } = useAppStore()
+
+  const [showThemeModal, setShowThemeModal] = useState(false)
+  const [initDone, setInitDone] = useState(false)
+  const prevLoading = useRef(false)
+  const webviewLoading = useAppStore((s) => s.webviewLoading)
+  const pageModalOpen = useAppStore((s) => s.pageModalOpen)
+  const categoryModalOpen = useAppStore((s) => s.categoryModalOpen)
+  const dialogOpen = useAppStore((s) => s.dialogOpen)
+
+  // ── Init from electron-store ────────────────────────────────────
+  useEffect(() => {
+    async function init() {
+      try {
+        const [savedDomain, savedPages, savedCategories, savedTheme, savedTestState, savedNotes] =
+          await Promise.all([
+            window.api.getStoreValue('domain'),
+            window.api.getStoreValue('pages'),
+            window.api.getStoreValue('categories'),
+            window.api.getStoreValue('theme'),
+            window.api.getStoreValue('testState'),
+            window.api.getStoreValue('notes'),
+          ])
+
+        if (typeof savedDomain === 'string' && savedDomain) setDomain(savedDomain)
+        if (Array.isArray(savedPages) && savedPages.length) setPages(savedPages as Page[])
+        if (Array.isArray(savedCategories) && savedCategories.length)
+          setCategories(savedCategories as string[])
+
+        if (savedTheme && typeof savedTheme === 'string') {
+          setTheme(savedTheme as 'light' | 'dark' | 'system')
+          applyTheme(savedTheme)
+        } else {
+          setShowThemeModal(true)
+        }
+
+        if (savedTestState && typeof savedTestState === 'object') {
+          Object.entries(savedTestState as Record<string, string>).forEach(([id, status]) => {
+            setTestStatus(id, status as 'untested' | 'tested' | 'error')
+          })
+        }
+        if (savedNotes && typeof savedNotes === 'object') {
+          Object.entries(savedNotes as Record<string, string>).forEach(([id, note]) => {
+            setNote(id, note)
+          })
+        }
+      } catch (err) {
+        console.error('Init error', err)
+      }
+
+      // Signal that init is complete — notifyReady() is deferred to a
+      // useEffect so React has committed the render (including the theme
+      // modal, if shown) before the main window becomes visible.
+      setInitDone(true)
+    }
+
+    init()
+  }, [])
+
+  // Notify main process only AFTER React has committed the post-init render.
+  // This prevents the two-gate splash from closing before the theme modal
+  // (or any other first-render state) is actually painted on screen.
+  useEffect(() => {
+    if (initDone) {
+      window.api.notifyReady()
+    }
+  }, [initDone])
+
+  // Hide the native WebContentsView whenever any modal/dialog is open.
+  // WebContentsView renders at the OS level above all HTML, so without this
+  // the modals appear behind the (possibly white) preview pane.
+  useEffect(() => {
+    const anyOpen = pageModalOpen || categoryModalOpen || dialogOpen || showThemeModal
+    window.api.webviewSetVisible(!anyOpen)
+  }, [pageModalOpen, categoryModalOpen, dialogOpen, showThemeModal])
+
+  // ── Subscribe to webview IPC events ────────────────────────────
+  useEffect(() => {
+    const unsubs = [
+      window.api.onWebviewLoading(setWebviewLoading),
+      window.api.onWebviewNavState(({ canGoBack, canGoForward }) => {
+        setCanGoBack(canGoBack)
+        setCanGoForward(canGoForward)
+      }),
+      window.api.onWebviewTitle(setWebviewTitle),
+      window.api.onWebviewUrlChanged(setCurrentUrl),
+      window.api.onWebviewLoadError(() => {
+        // Could show error state in toolbar
+      }),
+      window.api.onPageStatusResult(({ id, status }) => {
+        setHttpStatus(id, status)
+      }),
+    ]
+    return () => unsubs.forEach((u) => u())
+  }, [])
+
+  // ── Auto-mark page as tested when load completes ────────────────
+  const activePageIdRef = useRef(activePageId)
+  useEffect(() => {
+    activePageIdRef.current = activePageId
+  }, [activePageId])
+
+  useEffect(() => {
+    if (prevLoading.current && !webviewLoading) {
+      const id = activePageIdRef.current
+      if (id && testState[id] !== 'error') {
+        markTested(id, 'tested')
+      }
+    }
+    prevLoading.current = webviewLoading
+  }, [webviewLoading])
+
+  // ── Persist test state changes ──────────────────────────────────
+  useEffect(() => {
+    window.api.setStoreValue('testState', testState)
+  }, [testState])
+
+  // ── Keyboard shortcuts ──────────────────────────────────────────
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const mod = e.ctrlKey || e.metaKey
+      if (mod && e.key === 'n') {
+        e.preventDefault()
+        openAddModal()
+      }
+      if (mod && e.key === 'r') {
+        e.preventDefault()
+        window.api.webviewReload()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // ── Theme selection (first launch) ─────────────────────────────
+  async function handleThemeConfirm(theme: Theme) {
+    useAppStore.getState().setTheme(theme)
+    applyTheme(theme)
+    await window.api.setStoreValue('theme', theme)
+    window.api.setNativeTheme(theme)
+    setShowThemeModal(false)
+  }
+
+  return (
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-surface text-on-surface font-sans">
+      {showThemeModal && <ThemeSelectionModal onConfirm={handleThemeConfirm} />}
+      <Toaster position="bottom-right" richColors />
+
+      {/* App Header — full width */}
+      <Header />
+
+      {/* Below header */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Content area */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Webview toolbar */}
+          <WebviewToolbar />
+
+          {/* Webview placeholder — WebContentsView overlays here */}
+          <div className="flex-1 bg-surface-container pointer-events-none relative overflow-hidden">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant/20 select-none gap-2">
+              <MonitorPlay className="w-12 h-12" />
+              <p className="text-[12px]">Preview</p>
+            </div>
           </div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-            WP Test Tool
-          </h1>
-        </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Target URL</label>
-            <input 
-              type="text" 
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="https://example.com"
-            />
-          </div>
-
-          <button 
-            onClick={handleSave}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2.5 rounded-lg transition-colors active:scale-[0.98]"
-          >
-            <Rocket className="w-4 h-4" />
-            <span>Lưu cấu hình</span>
-          </button>
+          {/* Bottom panel */}
+          <BottomPanel />
         </div>
+      </div>
 
-        <div className="mt-auto pt-6 border-t border-slate-800 text-xs text-slate-500 text-center">
-          <p>Powered by Electron 34 & React 19</p>
-          <p className="mt-1">Tailwind CSS v4 + Zustand</p>
-        </div>
-      </aside>
-
-      {/* Main Content Area - Trống rỗng để WebContentsView phủ lên */}
-      <main className="flex-1 bg-slate-950 relative flex items-center justify-center pointer-events-none">
-        {/* Placeholder UI if WebContentsView is hidden/loading */}
-        <div className="text-slate-600 text-center space-y-3">
-          <MonitorPlay className="w-16 h-16 mx-auto opacity-20" />
-          <p>Đang tải Web Preview...</p>
-        </div>
-      </main>
+      {/* Modals */}
+      <AddPageModal />
+      <ManageCategoriesModal />
     </div>
   )
 }

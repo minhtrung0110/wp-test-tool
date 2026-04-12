@@ -1,67 +1,131 @@
-import { app, BrowserWindow, WebContentsView } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { setupIpc } from './ipc'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, ipcMain, WebContentsView, nativeTheme } from 'electron'
+import path, { join } from 'path'
+import {
+  setupIpc,
+  updateViewBounds,
+  HEADER_HEIGHT,
+  TOOLBAR_HEIGHT,
+  SIDEBAR_WIDTH,
+  BOTTOM_PANEL_HEIGHT,
+} from './ipc'
+import { getStoreValue } from './store'
+
+function resolveIcon(name: string): string {
+  return is.dev
+    ? path.join(__dirname, '../../assets', name)
+    : path.join(process.resourcesPath, 'assets', name)
+}
+
+const SPLASH_MIN_MS = 2000
+
+function applyNativeTheme() {
+  const saved = getStoreValue('theme') as string | null | undefined
+  if (saved === 'dark') nativeTheme.themeSource = 'dark'
+  else if (saved === 'light') nativeTheme.themeSource = 'light'
+  else nativeTheme.themeSource = 'system'
+}
+
+function createSplashWindow(): BrowserWindow {
+  const splash = new BrowserWindow({
+    width: 560,
+    height: 460,
+    frame: false,
+    resizable: false,
+    center: true,
+    show: true,
+    skipTaskbar: true,
+    webPreferences: { sandbox: false },
+    icon: resolveIcon('icon.png'),
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    splash.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/splash.html`)
+  } else {
+    splash.loadFile(join(__dirname, '../renderer/splash.html'))
+  }
+
+  return splash
+}
 
 function createWindow(): void {
-  // Create Main Window (React UI)
+  // Apply saved theme before any window is shown → prevents white flash in dark mode
+  applyNativeTheme()
+
+  const splash = createSplashWindow()
+
   const mainWindow = new BrowserWindow({
-    width: 1200,
+    width: 1280,
     height: 800,
+    minWidth: 900,
+    minHeight: 600,
     show: false,
     autoHideMenuBar: true,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#070c17' : '#f8f9fb',
+    icon: resolveIcon('icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
-    }
+      sandbox: false,
+    },
   })
 
-  mainWindow.on('ready-to-show', () => {
+  // ── Two-gate mechanism: enforce minimum splash duration ────────────
+  let rendererReady = false
+  let minTimeElapsed = false
+
+  function attemptTransition() {
+    if (!rendererReady || !minTimeElapsed) return
+    if (!splash.isDestroyed()) splash.close()
     mainWindow.show()
+    mainWindow.focus()
+  }
+
+  // Gate 1: minimum 2-second splash display
+  setTimeout(() => {
+    minTimeElapsed = true
+    attemptTransition()
+  }, SPLASH_MIN_MS)
+
+  // Gate 2: renderer signals it is fully initialised and has rendered
+  ipcMain.once('app-ready', () => {
+    rendererReady = true
+    attemptTransition()
   })
 
-  // Load React App
+  // ── Load renderer ──────────────────────────────────────────────────
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // Create WebContentsView (Web Preview Tool)
-  // Let's create a placeholder WebContentsView and attach it to mainWindow's contentView
+  // ── WebContentsView (preview pane) ─────────────────────────────────
   const view = new WebContentsView()
   mainWindow.contentView.addChildView(view)
-  
-  // Example dimensions: position it on the right side
-  view.setBounds({ x: 300, y: 0, width: 900, height: 800 })
-  view.webContents.loadURL('https://google.com')
-  
-  // When window resizes, update view bounds
-  mainWindow.on('resize', () => {
-    const bounds = mainWindow.getBounds()
-    // adjust bounds for view based on your specific layout design.
-    // Assuming a 300px sidebar: bounds.width - 300
-    // NOTE: getBounds() includes window framing, while setBounds for view is client area. 
-    // Usually standard to calculate off mainWindow.getContentBounds()
-    const contentBounds = mainWindow.getContentBounds()
-    view.setBounds({
-      x: 300,
-      y: 0,
-      width: contentBounds.width - 300,
-      height: contentBounds.height
-    })
+  view.webContents.loadURL('about:blank')
+
+  const bounds = mainWindow.getContentBounds()
+  view.setBounds({
+    x: SIDEBAR_WIDTH,
+    y: HEADER_HEIGHT + TOOLBAR_HEIGHT,
+    width: bounds.width - SIDEBAR_WIDTH,
+    height: bounds.height - HEADER_HEIGHT - TOOLBAR_HEIGHT - BOTTOM_PANEL_HEIGHT,
   })
+
+  mainWindow.on('resize', () => {
+    updateViewBounds(view, mainWindow)
+  })
+
+  setupIpc(view, mainWindow)
 }
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.wptesttool')
 
-  // Default bindings (F12, etc.)
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  setupIpc()
   createWindow()
 
   app.on('activate', function () {

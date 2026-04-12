@@ -15,6 +15,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    publicDir: resolve('assets'),
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer')
@@ -22,6 +23,14 @@ export default defineConfig({
     },
     plugins: [
       tailwindcss()
-    ]
+    ],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          splash: resolve('src/renderer/splash.html')
+        }
+      }
+    }
   }
 })

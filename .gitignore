@@ -1,7 +1,54 @@
+# Dependencies
 node_modules
-out
-vietnambooking-pages.json
+**/node_modules
 
+# Production / Build outputs (electron-vite)
+dist
+dist-electron
+out
+release
+build
+
+# Vite cache
+.vite
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
 .env
 .env.local
+.env.*.local
 .env.production
+.env.development
+
+# Large/generated data files
+vietnambooking-pages.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Optional
+coverage/
+.nyc_output/

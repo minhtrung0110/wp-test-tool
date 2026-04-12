@@ -1,12 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 @import "tailwindcss";
 
+/* ── Class-based dark mode ───────────────────────────────────────── */
+@custom-variant dark (&:is(.dark, .dark *));
+
 @theme {
-  --color-primary: #3b82f6; /* Example configuration */
+  /* ── Surfaces (light) ───────────────────────────────────────── */
+  --color-surface:                   #f8f9fb;
+  --color-surface-bright:            #ffffff;
+  --color-surface-container-lowest:  #ffffff;
+  --color-surface-container-low:     #f3f4f6;
+  --color-surface-container:         #edeef0;
+  --color-surface-container-high:    #e8e9eb;
+  --color-surface-container-highest: #e2e3e5;
+
+  /* ── Primary brand ──────────────────────────────────────────── */
+  --color-primary:           #2563eb;
+  --color-primary-container: #1d4ed8;
+  --color-on-primary:        #ffffff;
+  --color-primary-fixed-dim: #adc6ff;
+
+  /* ── Content ────────────────────────────────────────────────── */
+  --color-on-surface:         #191c1e;
+  --color-on-surface-variant: #434655;
+  --color-outline-variant:    #c3c6d7;
+
+  /* ── Status ─────────────────────────────────────────────────── */
+  --color-success:            #1d9e75;
+  --color-error-color:        #e24b4a;
+  --color-warning:            #ba7517;
+  --color-tertiary-container: #007d55;
+  --color-on-tertiary-fixed:  #002113;
+  --color-error-container:    #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-display: 'Manrope', system-ui, sans-serif;
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-mono:    ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
 }
 
-/* Add any custom CSS below */
+/* ── Dark mode overrides ─────────────────────────────────────────── */
+.dark {
+  --color-surface:                   #070c17;
+  --color-surface-bright:            #0e1929;
+  --color-surface-container-lowest:  #040810;
+  --color-surface-container-low:     #0c1422;
+  --color-surface-container:         #13202f;
+  --color-surface-container-high:    #1a2d3e;
+  --color-surface-container-highest: #213649;
+
+  --color-primary:           #4d8ef5;
+  --color-primary-container: #2563eb;
+  --color-on-primary:        #ffffff;
+  --color-primary-fixed-dim: #1e3a5f;
+
+  --color-on-surface:         #eef1f6;
+  --color-on-surface-variant: #adc0d0;
+  --color-outline-variant:    #233447;
+
+  --color-success:            #5dcaa5;
+  --color-error-color:        #f09595;
+  --color-warning:            #ef9f27;
+  --color-tertiary-container: #5dcaa5;
+  --color-error-container:    #7f1d1d;
+  --color-on-error-container: #fca5a5;
+}
+
+/* ── Base ───────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
-  display: flex;
-  min-height: 100vh;
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+input, textarea {
+  user-select: text;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-on-surface-variant);
+}
+
+/* ── Glassmorphism — floating tooltips / screenshot previews ────── */
+.glass {
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Blurred tray — bottom utility panel ───────────────────────── */
+.panel-blur {
+  background: color-mix(in srgb, var(--color-surface-container-low) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ── Shadow utilities ────────────────────────────────────────────── */
+.shadow-ambient {
+  box-shadow: 0 12px 32px rgba(0, 74, 198, 0.05);
+}
+
+.shadow-float {
+  box-shadow: 0 8px 24px rgba(0, 74, 198, 0.08);
+}
+
+/* ── Scrollbar hide utility ──────────────────────────────────────── */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
