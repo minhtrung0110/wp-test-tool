@@ -47,9 +47,9 @@ Download the latest installer for your platform from the [**Releases**](https://
 
 | Platform | Installer                      |
 | -------- | ------------------------------ |
-| Windows  | `WP.Test.Tool-Setup-1.0.1.exe` |
-| macOS    | `WP.Test.Tool-1.0.1.dmg`       |
-| Linux    | `WP.Test.Tool-1.0.1.AppImage`  |
+| Windows  | `WP.Test.Tool-Setup-1.0.2.exe` |
+| macOS    | `WP.Test.Tool-1.0.2.dmg`       |
+| Linux    | `WP.Test.Tool-1.0.2.AppImage`  |
 
 > **macOS note:** The app is not notarized. Right-click → **Open** to bypass Gatekeeper on first launch, or run:
 >
