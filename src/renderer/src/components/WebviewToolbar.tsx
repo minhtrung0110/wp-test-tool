@@ -202,21 +202,28 @@ export function WebviewToolbar() {
       <div className="w-px h-5 bg-outline-variant/20 mx-0.5" />
 
       {/* Viewport toggles */}
-      <div className="flex items-center bg-surface-container rounded-md p-0.5">
-        {VIEWPORT_OPTIONS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            onClick={() => handleViewportChange(id)}
-            title={label}
-            className={`p-1.5 rounded transition-colors ${
-              viewport === id
-                ? 'bg-primary text-white'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-          </button>
-        ))}
+      <div className="flex items-center gap-1.5">
+        <div className="flex items-center bg-surface-container rounded-md p-0.5">
+          {VIEWPORT_OPTIONS.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => handleViewportChange(id)}
+              title={label}
+              className={`p-1.5 rounded transition-colors ${
+                viewport === id
+                  ? 'bg-primary text-white'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+            </button>
+          ))}
+        </div>
+        {viewport !== 'desktop' && (
+          <span className="text-[11px] font-mono text-on-surface-variant/60 tabular-nums select-none">
+            {viewport === 'mobile' ? '375' : '768'}px
+          </span>
+        )}
       </div>
 
       {/* Separator */}

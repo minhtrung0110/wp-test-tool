@@ -208,6 +208,8 @@ export function App() {
     openAddModal,
   } = useAppStore()
 
+  const viewport = useAppStore((s) => s.viewport)
+
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [initDone, setInitDone] = useState(false)
   const prevLoading = useRef(false)
@@ -368,7 +370,23 @@ export function App() {
           <WebviewToolbar />
 
           {/* Webview placeholder — WebContentsView overlays here */}
-          <div className="flex-1 bg-surface-container pointer-events-none relative overflow-hidden">
+          <div
+            className={`flex-1 pointer-events-none relative overflow-hidden transition-colors ${
+              viewport !== 'desktop'
+                ? 'bg-[#b0b4bc] dark:bg-[#060b15]'
+                : 'bg-surface-container'
+            }`}
+          >
+            {/* Device-area panel — sits behind the native view, gives visible frame in non-desktop modes */}
+            {viewport !== 'desktop' && (
+              <div
+                className="absolute inset-y-0 bg-surface-container shadow-[0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
+                style={{
+                  left: `max(0px, calc((100% - ${viewport === 'mobile' ? 375 : 768}px) / 2))`,
+                  right: `max(0px, calc((100% - ${viewport === 'mobile' ? 375 : 768}px) / 2))`,
+                }}
+              />
+            )}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant/20 select-none gap-2">
               <MonitorPlay className="w-12 h-12" />
               <p className="text-[12px]">Preview</p>
