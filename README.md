@@ -25,19 +25,19 @@ After merging CSS or layout changes to a WordPress project, manually opening eac
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-viewport Preview** | Switch instantly between Desktop, Tablet (768 px), and Mobile (375 px) |
-| **Page Management** | Add, edit, and delete pages with title, slug, and category |
-| **Category Filtering** | Pill-style category tabs to focus on one section at a time |
-| **404 / HTTP Checker** | HEAD-checks every page URL and flags non-2xx responses in the sidebar |
-| **Screenshot Capture** | `capturePage()` saves PNGs locally; thumbnail gallery in the bottom panel |
-| **Per-page Notes** | Write error notes per page (Ctrl+Enter to save); auto-marks the page as Error |
-| **Progress Tracking** | Live progress bar showing Tested / Error / Untested counts |
-| **Import / Export** | Import a JSON page list; export to JSON or a formatted `.txt` report |
-| **Theme Support** | Light, dark, and system-aware themes — persisted across sessions |
-| **Domain Management** | Set a base domain once; all slugs are resolved against it automatically |
-| **Keyboard Shortcuts** | `Ctrl+N` new page · `Ctrl+R` reload · `Ctrl+Enter` save note |
+| Feature                    | Description                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| **Multi-viewport Preview** | Switch instantly between Desktop, Tablet (768 px), and Mobile (375 px)        |
+| **Page Management**        | Add, edit, and delete pages with title, slug, and category                    |
+| **Category Filtering**     | Pill-style category tabs to focus on one section at a time                    |
+| **404 / HTTP Checker**     | HEAD-checks every page URL and flags non-2xx responses in the sidebar         |
+| **Screenshot Capture**     | `capturePage()` saves PNGs locally; thumbnail gallery in the bottom panel     |
+| **Per-page Notes**         | Write error notes per page (Ctrl+Enter to save); auto-marks the page as Error |
+| **Progress Tracking**      | Live progress bar showing Tested / Error / Untested counts                    |
+| **Import / Export**        | Import a JSON page list; export to JSON or a formatted `.txt` report          |
+| **Theme Support**          | Light, dark, and system-aware themes — persisted across sessions              |
+| **Domain Management**      | Set a base domain once; all slugs are resolved against it automatically       |
+| **Keyboard Shortcuts**     | `Ctrl+N` new page · `Ctrl+R` reload · `Ctrl+Enter` save note                  |
 
 ---
 
@@ -45,18 +45,20 @@ After merging CSS or layout changes to a WordPress project, manually opening eac
 
 Download the latest installer for your platform from the [**Releases**](https://github.com/minhtrung0110/wp-test-tool/releases) page.
 
-| Platform | Installer |
-|----------|-----------|
-| Windows | `WP.Test.Tool-Setup-x.x.x.exe` |
-| macOS | `WP.Test.Tool-x.x.x.dmg` |
-| Linux | `WP.Test.Tool-x.x.x.AppImage` |
+| Platform | Installer                      |
+| -------- | ------------------------------ |
+| Windows  | `WP.Test.Tool-Setup-1.0.1.exe` |
+| macOS    | `WP.Test.Tool-1.0.1.dmg`       |
+| Linux    | `WP.Test.Tool-1.0.1.AppImage`  |
 
 > **macOS note:** The app is not notarized. Right-click → **Open** to bypass Gatekeeper on first launch, or run:
+>
 > ```sh
 > xattr -cr "/Applications/WP Test Tool.app"
 > ```
 
 > **Linux note:** Make the AppImage executable before running:
+>
 > ```sh
 > chmod +x WP.Test.Tool-*.AppImage
 > ```
@@ -65,18 +67,18 @@ Download the latest installer for your platform from the [**Releases**](https://
 
 ## Tech Stack
 
-| Layer | Library |
-|-------|---------|
-| Shell | [Electron 34](https://www.electronjs.org/) |
-| UI Framework | [React 19](https://react.dev/) |
-| Language | [TypeScript 5.8](https://www.typescriptlang.org/) — strict mode |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
-| State | [Zustand 5](https://zustand-demo.pmnd.rs/) |
-| Persistence | [electron-store 8](https://github.com/sindresorhus/electron-store) |
-| UI Primitives | [Radix UI](https://www.radix-ui.com/) |
-| Notifications | [Sonner](https://sonner.emilkowal.ski/) |
-| Icons | [Lucide React](https://lucide.dev/) |
-| Build | [electron-vite 5](https://electron-vite.org/) + [electron-builder 25](https://www.electron.build/) |
+| Layer         | Library                                                                                            |
+| ------------- | -------------------------------------------------------------------------------------------------- |
+| Shell         | [Electron 34](https://www.electronjs.org/)                                                         |
+| UI Framework  | [React 19](https://react.dev/)                                                                     |
+| Language      | [TypeScript 5.8](https://www.typescriptlang.org/) — strict mode                                    |
+| Styling       | [Tailwind CSS v4](https://tailwindcss.com/)                                                        |
+| State         | [Zustand 5](https://zustand-demo.pmnd.rs/)                                                         |
+| Persistence   | [electron-store 8](https://github.com/sindresorhus/electron-store)                                 |
+| UI Primitives | [Radix UI](https://www.radix-ui.com/)                                                              |
+| Notifications | [Sonner](https://sonner.emilkowal.ski/)                                                            |
+| Icons         | [Lucide React](https://lucide.dev/)                                                                |
+| Build         | [electron-vite 5](https://electron-vite.org/) + [electron-builder 25](https://www.electron.build/) |
 
 ---
 
@@ -143,7 +145,7 @@ src/
 - **IPC-only Node access** — the renderer has no direct Node.js access; all privileged operations go through `window.api.*` defined in the context bridge.
 - **WebContentsView overlay** — the live preview is a native `WebContentsView` (not the deprecated `<webview>` tag) positioned by the main process above the HTML layer, enabling true browser rendering.
 - **Dual-layer viewport visual** — in Tablet/Mobile mode the renderer shows distinct gutter areas alongside the native overlay, giving immediate visual confirmation of the active viewport width.
-- **Two-gate splash** — the main window only appears after *both* the minimum splash duration (2 s) and the renderer's `app-ready` IPC signal are satisfied.
+- **Two-gate splash** — the main window only appears after _both_ the minimum splash duration (2 s) and the renderer's `app-ready` IPC signal are satisfied.
 
 ---
 

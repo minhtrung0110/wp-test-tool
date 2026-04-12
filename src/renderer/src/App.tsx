@@ -1,13 +1,13 @@
+import { Download, FileText, Monitor, MonitorPlay, Moon, Sun, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { MonitorPlay, Sun, Moon, Monitor, Download, Upload, FileText } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
-import { useAppStore, type Page } from './store'
-import { ThemeSelectionModal, type Theme } from './components/ThemeSelectionModal'
-import { Sidebar } from './components/Sidebar'
-import { WebviewToolbar } from './components/WebviewToolbar'
-import { BottomPanel } from './components/BottomPanel'
 import { AddPageModal } from './components/AddPageModal'
+import { BottomPanel } from './components/BottomPanel'
 import { ManageCategoriesModal } from './components/ManageCategoriesModal'
+import { Sidebar } from './components/Sidebar'
+import { ThemeSelectionModal, type Theme } from './components/ThemeSelectionModal'
+import { WebviewToolbar } from './components/WebviewToolbar'
+import { useAppStore, type Page } from './store'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -123,7 +123,6 @@ function Header() {
     <header className="h-[52px] bg-surface-container-low border-b border-outline-variant/10 flex items-center gap-3 px-4 shrink-0">
       {/* Logo */}
       <div className="flex items-center gap-2 shrink-0 w-[232px]">
-        <img src="/icon.png" alt="WP Test Tool" className="w-6 h-6 rounded object-contain shrink-0" draggable={false} />
         <span className="text-[14px] font-bold font-display text-on-surface">WP Test Tool</span>
       </div>
 
@@ -371,11 +370,10 @@ export function App() {
 
           {/* Webview placeholder — WebContentsView overlays here */}
           <div
-            className={`flex-1 pointer-events-none relative overflow-hidden transition-colors ${
-              viewport !== 'desktop'
+            className={`flex-1 pointer-events-none relative overflow-hidden transition-colors ${viewport !== 'desktop'
                 ? 'bg-[#b0b4bc] dark:bg-[#060b15]'
                 : 'bg-surface-container'
-            }`}
+              }`}
           >
             {/* Device-area panel — sits behind the native view, gives visible frame in non-desktop modes */}
             {viewport !== 'desktop' && (

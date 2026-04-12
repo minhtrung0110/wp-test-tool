@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22 # ← fix deprecated Node 20
           cache: "npm"
 
       - name: Install dependencies
@@ -40,9 +40,9 @@ jobs:
         run: npm run build
 
       - name: Package & publish
+        uses: electron-builder/action@v1 # ← dùng official action (ổn định hơn npx)
+        with:
+          args: ${{ matrix.platform_flag }} --publish always
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Disable automatic code-signing discovery on macOS runners
-          # (no Apple certificate is configured in this repo)
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npx electron-builder ${{ matrix.platform_flag }} --publish always
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false" # giữ nguyên vì chưa có certificate
