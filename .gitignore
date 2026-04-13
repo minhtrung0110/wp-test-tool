@@ -7,7 +7,7 @@ dist
 dist-electron
 out
 release
-build
+
 
 # Vite cache
 .vite
