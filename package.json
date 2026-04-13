@@ -70,7 +70,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico",
@@ -81,7 +83,9 @@
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "perMachine": true,
-      "installerLanguages": ["en_US"],
+      "installerLanguages": [
+        "en_US"
+      ],
       "language": "1033",
       "runAfterFinish": true,
       "createDesktopShortcut": true,
