@@ -1,6 +1,6 @@
 {
   "name": "wp-test-tool",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "WP Test Tool using Electron 34, React 19, Tailwind CSS v4",
   "main": "./out/main/index.js",
   "author": "Antigravity",
