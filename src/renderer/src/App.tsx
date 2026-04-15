@@ -1,4 +1,4 @@
-import { Download, FileText, Monitor, MonitorPlay, Moon, Sun, Upload } from 'lucide-react'
+import { Download, FileText, Monitor, MonitorPlay, Moon, RefreshCw, Sun, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { AddPageModal } from './components/AddPageModal'
@@ -29,9 +29,20 @@ function getPageUrl(domain: string, slug: string): string {
 }
 
 function Header() {
-  const { domain, setDomain, theme, setTheme, pages, testState, notes, categories, activePageId } =
-    useAppStore()
+  const {
+    domain,
+    setDomain,
+    theme,
+    setTheme,
+    pages,
+    testState,
+    notes,
+    categories,
+    activePageId,
+    currentUrl,
+  } = useAppStore()
   const [domainInput, setDomainInput] = useState(domain)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     setDomainInput(domain)
@@ -52,6 +63,24 @@ function Header() {
         window.api.webviewNavigate(getPageUrl(trimmed, activePage.slug))
       }
     }
+  }
+
+  async function handleRefreshAll() {
+    setRefreshing(true)
+    await window.api.webviewClearCache()
+    // Re-navigate to the active page so it loads fresh; if no active page
+    // but the toolbar has a URL (manual navigation), reload that instead.
+    const targetUrl = activePageId
+      ? (() => {
+          const p = pages.find((pg) => pg.id === activePageId)
+          return p ? getPageUrl(domain, p.slug) : currentUrl
+        })()
+      : currentUrl
+    if (targetUrl && targetUrl !== 'about:blank') {
+      window.api.webviewNavigate(targetUrl)
+    }
+    toast.success('Cache cleared — reloading page')
+    setRefreshing(false)
   }
 
   async function handleThemeCycle() {
@@ -149,6 +178,21 @@ function Header() {
 
       {/* Actions */}
       <div className="flex items-center gap-1 shrink-0">
+        {/* Refresh — clears the preview cache and reloads the current page */}
+        <button
+          onClick={handleRefreshAll}
+          disabled={refreshing}
+          title="Clear cache & reload"
+          className="flex items-center gap-1.5 px-2.5 h-[30px] text-[12px] font-medium rounded-md
+            bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface
+            border border-outline-variant/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+
+        <div className="w-px h-5 bg-outline-variant/20 mx-1" />
+
         <button
           onClick={handleImportJson}
           title="Import JSON"

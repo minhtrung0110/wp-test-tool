@@ -18,6 +18,7 @@ const api = {
   webviewGoBack: () => ipcRenderer.invoke('webview:go-back'),
   webviewGoForward: () => ipcRenderer.invoke('webview:go-forward'),
   webviewReload: () => ipcRenderer.invoke('webview:reload'),
+  webviewClearCache: () => ipcRenderer.invoke('webview:clear-cache'),
   webviewSetViewport: (v: Viewport) => ipcRenderer.invoke('webview:set-viewport', v),
   webviewSetBottomHeight: (h: number) => ipcRenderer.invoke('webview:set-bottom-height', h),
   webviewOpenExternal: (url: string) => ipcRenderer.invoke('webview:open-external', url),

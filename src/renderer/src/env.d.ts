@@ -21,6 +21,7 @@ declare interface Window {
     webviewGoBack: () => Promise<void>
     webviewGoForward: () => Promise<void>
     webviewReload: () => Promise<void>
+    webviewClearCache: () => Promise<void>
     webviewSetViewport: (v: Viewport) => Promise<void>
     webviewSetBottomHeight: (h: number) => Promise<void>
     webviewOpenExternal: (url: string) => Promise<void>

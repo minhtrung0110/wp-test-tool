@@ -100,7 +100,13 @@ function createWindow(): void {
   }
 
   // ── WebContentsView (preview pane) ─────────────────────────────────
-  const view = new WebContentsView()
+  // Use a dedicated session so clearCache() only affects the preview pane,
+  // not the renderer window. "persist:" keeps cookies/login state across restarts.
+  const view = new WebContentsView({
+    webPreferences: {
+      partition: 'persist:preview',
+    },
+  })
   mainWindow.contentView.addChildView(view)
   view.webContents.loadURL('about:blank')
 

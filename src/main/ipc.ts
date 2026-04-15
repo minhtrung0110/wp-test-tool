@@ -59,7 +59,11 @@ export function setupIpc(view: WebContentsView, mainWindow: BrowserWindow): void
   })
 
   // ── Webview navigation ────────────────────────────────────────────
-  ipcMain.handle('webview:navigate', (_, url: string) => {
+  // Clear the preview session's disk cache before every navigation so that
+  // both the main document AND all sub-resources (CSS, JS, images) are always
+  // fetched fresh from the server, regardless of server-sent cache headers.
+  ipcMain.handle('webview:navigate', async (_, url: string) => {
+    await view.webContents.session.clearCache()
     view.webContents.loadURL(url)
   })
 
@@ -72,7 +76,13 @@ export function setupIpc(view: WebContentsView, mainWindow: BrowserWindow): void
   })
 
   ipcMain.handle('webview:reload', () => {
-    view.webContents.reload()
+    view.webContents.reloadIgnoringCache()
+  })
+
+  // Clears the preview session cache without navigating — used by the
+  // "Refresh" header button before re-navigating to the active page.
+  ipcMain.handle('webview:clear-cache', async () => {
+    await view.webContents.session.clearCache()
   })
 
   ipcMain.handle('webview:set-viewport', (_, viewport: 'desktop' | 'tablet' | 'mobile') => {
